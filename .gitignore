@@ -1,0 +1,10 @@
+backend/.gradle/
+backend/build/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/test-results/
+frontend/playwright-report/
+database/data/
+.tools/
+*.log

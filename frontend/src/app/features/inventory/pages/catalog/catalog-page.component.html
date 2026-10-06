@@ -1,0 +1,118 @@
+<header>
+  <a class="logo" href="/" aria-label="RutaMotor inicio"
+    ><span class="logo-mark">R</span>RutaMotor<span class="logo-dot">.</span></a
+  ><span class="header-caption">Herramienta comercial · Demo local</span>
+</header>
+<main>
+  <div class="intro">
+    <p class="eyebrow">INVENTARIO / VEHÍCULOS</p>
+    <h1>La próxima ruta<br />comienza aquí.</h1>
+    <p>Consulta el catálogo y separa una unidad para tu comprador.</p>
+  </div>
+  @if (result(); as r) {
+    <section
+      class="notice"
+      [class.success]="r.outcome === 'ACCEPTED'"
+      [class.warning]="r.outcome === 'REJECTED'"
+      role="status"
+      aria-live="polite"
+    >
+      <strong>{{
+        r.outcome === "ACCEPTED"
+          ? "Separación confirmada"
+          : "Solicitud rechazada"
+      }}</strong>
+      <p>
+        {{
+          r.outcome === "ACCEPTED"
+            ? "La unidad quedó separada para " + r.buyerAlias + "."
+            : r.reason === "NOT_FOUND"
+              ? "La unidad solicitada no existe."
+              : "La unidad ya no está disponible; otro asesor pudo haberla separado."
+        }}
+      </p>
+      <p class="reference">Referencia: {{ r.reference }}</p>
+      @if (r.appliedPrice !== null) {
+        <p>
+          Precio aplicado:
+          <strong>{{
+            r.appliedPrice | currency: "COP" : "code" : "1.0-0"
+          }}</strong>
+        </p>
+      }
+    </section>
+  }
+  @if (notice()) {
+    <p class="notice warning" role="alert">{{ notice() }}</p>
+  }
+  <section class="toolbar" aria-label="Filtros del catálogo">
+    <div>
+      <label for="brand">Filtrar por marca</label
+      ><select
+        id="brand"
+        [value]="brand()"
+        (change)="filter($any($event.target).value)"
+      >
+        <option value="">Todas las marcas</option>
+        <option>Toyota</option>
+        <option>Mazda</option>
+        <option>Renault</option>
+      </select>
+    </div>
+    <span>{{ data()?.total ?? "—" }} unidades · Hasta 25 por página</span
+    ><button class="secondary" (click)="reload()" [disabled]="loading()">
+      Actualizar
+    </button>
+  </section>
+  @if (loading()) {
+    <div class="empty" role="status">Consultando unidades…</div>
+  } @else if (error()) {
+    <div class="empty" role="alert">
+      <p>{{ error() }}</p>
+      <button (click)="reload()">Reintentar consulta</button>
+    </div>
+  } @else if (!data()?.items?.length) {
+    <div class="empty">No hay unidades para esta consulta.</div>
+  } @else {
+    <section class="grid" aria-label="Catálogo de vehículos">
+      @for (vehicle of data()!.items; track vehicle.id) {
+        <app-vehicle-card
+          [vehicle]="vehicle"
+          [disabled]="!!intent()"
+          (reserve)="select($event)"
+        />
+      }
+    </section>
+  }
+  <nav class="pagination" aria-label="Paginación">
+    <button
+      class="secondary"
+      [disabled]="loading() || page() === 0"
+      (click)="navigate(-1)"
+    >
+      Anterior</button
+    ><span>Página {{ page() + 1 }}</span
+    ><button
+      class="secondary"
+      [disabled]="loading() || !data() || (page() + 1) * 25 >= data()!.total"
+      (click)="navigate(1)"
+    >
+      Siguiente
+    </button>
+  </nav>
+  <footer>
+    Una unidad física. Una reserva confiable.<span
+      >Precios en pesos colombianos · Datos ficticios</span
+    >
+  </footer>
+</main>
+@if (intent(); as current) {
+  <app-reserve-modal
+    [intent]="current"
+    [busy]="busy()"
+    [locked]="locked()"
+    [message]="message()"
+    (submitted)="submit($event)"
+    (closed)="close()"
+  />
+}
